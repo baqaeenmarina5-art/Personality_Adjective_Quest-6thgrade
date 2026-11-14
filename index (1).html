@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Personality Quest – Describing People</title>
+<style>
+  :root{
+    --ink:#0b1f3a;
+    --blue:#1d4ed8;
+    --blue-soft:#dbe7ff;
+    --orange:#ea7a0c;
+    --orange-soft:#ffe9d0;
+    --green:#15803d;
+    --green-soft:#d9f5e3;
+    --red:#c81e1e;
+    --red-soft:#ffdede;
+    --purple:#7e22ce;
+    --bg:#fff8e7;
+    --card:#ffffff;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%}
+  body{
+    font-family:"Segoe UI","Arial Black",Arial,Helvetica,sans-serif;
+    font-weight:800;
+    color:var(--ink);
+    background:var(--bg);
+    background-image:radial-gradient(circle at 12% 18%,#ffe3a8 0 120px,transparent 121px),
+                     radial-gradient(circle at 92% 82%,#cfe0ff 0 160px,transparent 161px),
+                     radial-gradient(circle at 85% 10%,#d9f5e3 0 80px,transparent 81px);
+    display:flex;flex-direction:column;min-height:100vh;
+    user-select:none;overflow-x:hidden;
+  }
+  header{
+    display:flex;align-items:center;gap:16px;flex-wrap:wrap;
+    padding:12px 24px;background:var(--blue);color:#fff;
+    box-shadow:0 4px 0 rgba(0,0,0,.15);
+  }
+  header h1{margin:0;font-size:clamp(26px,3.2vw,46px);font-weight:900;letter-spacing:.5px;flex:1;min-width:280px}
+  .score{background:#fff;color:var(--blue);border-radius:999px;padding:6px 22px;font-size:clamp(22px,2.6vw,38px);font-weight:900}
+  .tool{
+    background:#fff;color:var(--blue);border:none;border-radius:14px;
+    font:inherit;font-size:clamp(20px,2.2vw,32px);padding:6px 16px;cursor:pointer;
+  }
+  .dots{display:flex;gap:10px;justify-content:center;padding:14px 12px 4px;flex-wrap:wrap}
+  .dot{
+    min-width:clamp(44px,5vw,70px);height:clamp(44px,5vw,70px);border-radius:50%;
+    background:#fff;border:4px solid var(--blue);color:var(--blue);
+    display:flex;align-items:center;justify-content:center;
+    font-size:clamp(22px,2.6vw,36px);font-weight:900;cursor:pointer;
+  }
+  .dot.done{background:var(--green);border-color:var(--green);color:#fff}
+  .dot.cur{background:var(--orange);border-color:var(--orange);color:#fff;transform:scale(1.15)}
+  main{flex:1;padding:10px 24px 8px;display:flex;justify-content:center}
+  #stage{
+    width:min(1300px,100%);background:var(--card);border-radius:28px;
+    border:6px solid var(--ink);padding:clamp(16px,2.4vw,34px);
+    box-shadow:0 10px 0 rgba(11,31,58,.18);
+  }
+  .stage-title{
+    display:inline-block;background:var(--orange);color:#fff;border-radius:16px;
+    padding:6px 22px;font-size:clamp(24px,2.8vw,42px);font-weight:900;margin:0 0 12px;
+  }
+  .instr{font-size:clamp(24px,2.7vw,40px);margin:6px 0 18px;line-height:1.3}
+  .big{font-size:clamp(30px,3.8vw,58px);line-height:1.3;margin:10px 0 20px;font-weight:900}
+  .blank{display:inline-block;min-width:3.2em;border-bottom:6px solid var(--orange);color:var(--orange);text-align:center}
+  .grid{display:grid;gap:16px}
+  .opts{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+  .btn{
+    font:inherit;font-weight:900;font-size:clamp(26px,3.2vw,50px);
+    min-height:clamp(80px,9vw,120px);padding:10px 18px;border-radius:22px;
+    border:5px solid var(--blue);background:var(--blue-soft);color:var(--ink);
+    cursor:pointer;transition:transform .08s;
+  }
+  .btn:active{transform:scale(.96)}
+  .btn.ok{background:var(--green);border-color:var(--green);color:#fff}
+  .btn.bad{background:var(--red);border-color:var(--red);color:#fff;animation:shake .4s}
+  .btn.off{opacity:.45;pointer-events:none}
+  .btn.orange{background:var(--orange-soft);border-color:var(--orange)}
+  .btn.small{min-height:auto;font-size:clamp(22px,2.6vw,38px);padding:8px 26px}
+  .primary{background:var(--green);border-color:var(--green);color:#fff}
+  .passage{
+    background:var(--green-soft);border:5px solid var(--green);border-radius:22px;
+    padding:16px 22px;font-size:clamp(26px,3vw,44px);line-height:1.4;margin-bottom:18px;
+  }
+  .passage.pop{animation:pop .35s}
+  .slots{display:flex;gap:12px;flex-wrap:wrap;min-height:clamp(80px,9vw,120px);
+    padding:12px;border:5px dashed var(--orange);border-radius:22px;background:var(--orange-soft);margin-bottom:18px;align-items:center}
+  .tile{
+    font:inherit;font-weight:900;font-size:clamp(28px,3.4vw,54px);
+    padding:8px 22px;border-radius:18px;border:5px solid var(--blue);background:#fff;color:var(--ink);cursor:pointer;
+  }
+  .tile.used{opacity:.25;pointer-events:none}
+  .tile.placed{background:var(--blue);color:#fff}
+  .tile.off{opacity:.3;pointer-events:none}
+  .tile.right{background:var(--green);border-color:var(--green);color:#fff}
+  .msg{
+    font-size:clamp(26px,3vw,46px);margin-top:16px;padding:12px 20px;border-radius:18px;
+  }
+  .msg.good{background:var(--green-soft);color:var(--green)}
+  .msg.info{background:var(--blue-soft);color:var(--blue)}
+  .row{display:flex;gap:16px;flex-wrap:wrap;margin-top:16px;align-items:center}
+  .row.center{justify-content:center}
+  .bingo{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:900px;margin:10px auto}
+  .cell{
+    font:inherit;font-weight:900;font-size:clamp(26px,3.4vw,52px);
+    min-height:clamp(90px,11vw,150px);border-radius:22px;border:5px solid var(--green);
+    background:var(--green-soft);color:var(--green);cursor:pointer;
+  }
+  .cell.hit{background:var(--green);color:#fff;text-decoration:line-through;text-decoration-thickness:6px}
+  .cell.bad{background:var(--red);border-color:var(--red);color:#fff;animation:shake .4s}
+  .clue{
+    background:var(--blue);color:#fff;border-radius:22px;padding:16px 24px;
+    font-size:clamp(28px,3.4vw,52px);text-align:center;margin-bottom:12px;line-height:1.3;
+  }
+  .spin-words{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin:16px 0}
+  .spin-words span{
+    background:var(--orange);color:#fff;border-radius:22px;padding:14px 30px;
+    font-size:clamp(34px,4.6vw,70px);font-weight:900;animation:pop .35s;
+  }
+  .sentence{font-size:clamp(30px,3.8vw,58px);line-height:1.6;font-weight:900}
+  .slot{
+    display:inline-block;min-width:3.5em;text-align:center;padding:0 14px;border-radius:14px;
+    border:5px dashed var(--orange);background:var(--orange-soft);color:var(--orange);cursor:pointer;
+  }
+  .slot.active{border-style:solid;background:#fff}
+  .slot.filled{color:var(--blue);border-color:var(--blue);background:var(--blue-soft)}
+  nav{
+    display:flex;justify-content:space-between;align-items:center;gap:12px;
+    padding:10px 24px 6px;width:min(1300px,100%);margin:0 auto;
+  }
+  nav .btn{min-height:auto;font-size:clamp(24px,2.8vw,42px);padding:8px 28px}
+  footer{text-align:center;padding:6px 10px 14px;font-size:clamp(18px,1.9vw,26px);color:var(--ink);opacity:.85}
+  .final{text-align:center}
+  .final .stars{font-size:clamp(60px,9vw,140px);margin:10px 0}
+  .final h2{font-size:clamp(40px,6vw,90px);margin:0;color:var(--orange)}
+  .final p{font-size:clamp(28px,3.4vw,52px);margin:10px 0}
+
+  /* ---------- learning stage ---------- */
+  .pips{display:flex;gap:10px;margin:0 0 14px}
+  .pip{width:clamp(18px,2vw,28px);height:clamp(18px,2vw,28px);border-radius:50%;background:#d6dbe6}
+  .pip.on{background:var(--orange);transform:scale(1.25)}
+  .pip.past{background:var(--green)}
+  .teacher{display:flex;gap:16px;align-items:center;margin-bottom:12px}
+  .teacher .owl{font-size:clamp(60px,8vw,120px);animation:bob 2s ease-in-out infinite}
+  .teacher .say{
+    flex:1;background:var(--blue-soft);border:5px solid var(--blue);border-radius:26px;
+    padding:12px 22px;font-size:clamp(26px,3vw,44px);line-height:1.3;position:relative;
+  }
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin:12px 0}
+  .card{
+    font:inherit;font-weight:900;background:#fff;border:5px solid var(--purple);border-radius:24px;
+    padding:12px;cursor:pointer;color:var(--ink);font-size:clamp(26px,3vw,44px);
+    box-shadow:0 8px 0 rgba(126,34,206,.25);transition:transform .1s;
+  }
+  .card:active{transform:translateY(5px);box-shadow:0 3px 0 rgba(126,34,206,.25)}
+  .card .em{font-size:clamp(56px,7vw,100px);line-height:1.1}
+  .blocks{display:flex;gap:14px;justify-content:center;align-items:center;flex-wrap:wrap;margin:16px 0}
+  .block{
+    min-width:clamp(150px,18vw,270px);padding:14px 22px;border-radius:26px;text-align:center;color:#fff;
+    font:inherit;font-weight:900;font-size:clamp(38px,5.2vw,80px);cursor:pointer;border:5px solid rgba(0,0,0,.15);
+    box-shadow:0 8px 0 rgba(0,0,0,.2);animation:pop .4s;
+  }
+  .block small{display:block;font-size:.36em;opacity:.95;margin-top:4px}
+  .b-subj{background:var(--blue)}
+  .b-be{background:var(--orange)}
+  .b-adj{background:var(--green)}
+  .b-not{background:var(--red)}
+  .plus{font-size:clamp(40px,5vw,72px);color:var(--ink)}
+  .tip{
+    background:var(--orange-soft);border:5px solid var(--orange);border-radius:22px;
+    padding:14px 22px;font-size:clamp(26px,3vw,44px);line-height:1.35;margin:10px 0;
+  }
+  .tip b{color:var(--green)}
+  .pron{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:10px 0}
+  .pron .tile{border-color:var(--blue);background:var(--blue-soft)}
+  .legend{display:flex;gap:12px;flex-wrap:wrap;margin:8px 0}
+  .legend span{color:#fff;border-radius:14px;padding:4px 16px;font-size:clamp(20px,2.3vw,32px)}
+
+  /* ---------- praise ---------- */
+  .toast{
+    position:fixed;top:86px;left:50%;transform:translateX(-50%);z-index:60;
+    background:var(--green);color:#fff;border:6px solid #fff;border-radius:999px;
+    padding:10px 36px;font-size:clamp(30px,4.2vw,64px);font-weight:900;white-space:nowrap;
+    box-shadow:0 10px 30px rgba(0,0,0,.3);animation:toastIn 1.7s forwards;pointer-events:none;
+  }
+  .toast.soft{background:var(--orange)}
+  .confetti{position:fixed;top:-70px;z-index:55;pointer-events:none;animation:fall linear forwards}
+  @keyframes toastIn{
+    0%{transform:translate(-50%,-40px) scale(.4);opacity:0}
+    15%{transform:translate(-50%,0) scale(1.1);opacity:1}
+    25%{transform:translate(-50%,0) scale(1)}
+    85%{opacity:1}
+    100%{transform:translate(-50%,0) scale(1);opacity:0}
+  }
+  @keyframes fall{to{transform:translateY(115vh) rotate(600deg)}}
+  @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-12px)}75%{transform:translateX(12px)}}
+  @keyframes pop{0%{transform:scale(.3);opacity:0}100%{transform:scale(1);opacity:1}}
+  @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  @media (max-width:700px){ .bingo{gap:8px} }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🎯 Personality Quest</h1>
+  <div class="score" id="score">⭐ 0</div>
+  <button class="tool" id="sound" title="Sound on/off">🔊</button>
+  <button class="tool" id="full" title="Full screen">⛶ Full screen</button>
+</header>
+
+<div class="dots" id="dots"></div>
+
+<main><div id="stage"></div></main>
+
+<nav>
+  <button class="btn" id="prev">⬅ Back</button>
+  <button class="btn primary" id="next">Next ➜</button>
+</nav>
+
+<footer>Prepared by Teacher Marina A.B</footer>
+
+<script>
+"use strict";
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+function h(tag, cls, txt){ const e=document.createElement(tag); if(cls) e.className=cls; if(txt!=null) e.textContent=txt; return e; }
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]];} return a; }
+function pick(a){ return a[Math.floor(Math.random()*a.length)]; }
+
+let soundOn = true, actx = null;
+function beep(ok){
+  if(!soundOn) return;
+  try{
+    actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+    const notes = ok ? [660,880,1100] : [260,200];
+    notes.forEach((f,i)=>{
+      const o=actx.createOscillator(), g=actx.createGain();
+      o.type="sine"; o.frequency.value=f; g.gain.value=.12;
+      o.connect(g); g.connect(actx.destination);
+      const t=actx.currentTime+i*.12; o.start(t); o.stop(t+.11);
+    });
+  }catch(e){}
+}
+
+/* ---------- praise & encouragement ---------- */
+const PRAISE = [
+  "Great job! 🎉","Excellent! 🌟","Super! 💪","Well done! 👏","Fantastic! 🚀",
+  "Brilliant! 🧠","You're a star! ⭐","Perfect! 💯","Awesome! 😎","Amazing work! 🏅",
+  "Wow, correct! 🤩","Way to go! 🙌"
+];
+const RETRY = ["Try again! 💪","Almost! Think again 🤔","Don't give up! 🌈","You can do it! 🚀"];
+
+function confetti(n){
+  const em = ["🎉","⭐","✨","🎈","🌟","💫","🎊"];
+  for(let i=0;i<(n||26);i++){
+    const s = h("span","confetti",pick(em));
+    s.style.left = Math.random()*100 + "vw";
+    s.style.fontSize = (22 + Math.random()*34) + "px";
+    s.style.animationDuration = (1.8 + Math.random()*1.6) + "s";
+    s.style.animationDelay = (Math.random()*.4) + "s";
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(), 4200);
+  }
+}
+function toast(text, soft){
+  const t = h("div","toast"+(soft?" soft":""),text);
+  document.body.appendChild(t);
+  setTimeout(()=>t.remove(), 1800);
+}
+function cheer(big){
+  beep(true);
+  toast("🦉 " + pick(PRAISE));
+  confetti(big ? 60 : 26);
+}
+function oops(){
+  beep(false);
+  toast(pick(RETRY), true);
+}
+
+const ADJ = ["shy","confident","lazy","hard-working","friendly","cheerful","kind","quiet","polite","responsible","tidy","untidy"];
+
+/* ---------- state ---------- */
+const state = { cur:0, score:0, total:15, done:{} };
+function setScore(n){ state.score += n; $("#score").textContent = "⭐ " + state.score; }
+function markDone(i){ state.done[i]=true; renderDots(); }
+
+/* =========================================================
+   STAGE 0 – LEARN: adjectives come after the verb "be"
+   ========================================================= */
+function stageLearn(c){
+  let k = 0;
+  const total = 5;
+
+  function frame(sayText){
+    c.innerHTML = "";
+    c.appendChild(h("div","stage-title","📖 Let's Learn!"));
+    const pips = h("div","pips");
+    for(let i=0;i<total;i++) pips.appendChild(h("div","pip"+(i===k?" on":i<k?" past":"")));
+    c.appendChild(pips);
+    const t = h("div","teacher");
+    t.appendChild(h("div","owl","🦉"));
+    t.appendChild(h("div","say",sayText));
+    c.appendChild(t);
+    const body = h("div");
+    c.appendChild(body);
+    return body;
+  }
+  function controls(body, lastLabel){
+    const r = h("div","row center");
+    r.style.marginTop = "22px";
+    if(k>0){
+      const b = h("button","btn small","⬅ Back");
+      b.onclick = ()=>{ k--; render(); };
+      r.appendChild(b);
+    }
+    if(k<total-1){
+      const n = h("button","btn small primary","Continue ➜");
+      n.onclick = ()=>{ beep(true); k++; render(); };
+      r.appendChild(n);
+    }
+    body.appendChild(r);
+  }
+  function block(cls, word, label){
+    const b = h("button","block "+cls,word);
+    if(label) b.appendChild(h("small","",label));
+    return b;
+  }
+
+  /* slide 1 – what is an adjective */
+  function s1(){
+    const body = frame("Adjectives are describing words. They tell us what a person is LIKE.");
+    const cards = [["😄","cheerful"],["😴","lazy"],["🤐","quiet"],["🧹","tidy"],["🙏","polite"],["💪","hard-working"]];
+    const grid = h("div","cards");
+    const bub = h("div","passage","👆 Tap a card!");
+    cards.forEach(([e,w])=>{
+      const d = h("button","card");
+      d.appendChild(h("div","em",e));
+      d.appendChild(h("div","",w));
+      d.onclick = ()=>{
+        beep(true);
+        bub.textContent = "💬 He's " + w + ".";
+        bub.classList.remove("pop"); void bub.offsetWidth; bub.classList.add("pop");
+      };
+      grid.appendChild(d);
+    });
+    body.appendChild(grid);
+    body.appendChild(bub);
+    controls(body);
+  }
+
+  /* slide 2 – the formula */
+  function s2(){
+    const body = frame("Look! The adjective comes AFTER the verb be (am / is / are).");
+    const ex = [["She","is","kind"],["I","am","shy"],["They","are","polite"],["He","is","lazy"],["We","are","friendly"],["You","are","confident"]];
+    let ei = 0;
+    const holder = h("div");
+    const tip = h("div","tip","👆 Tap each colour block to learn about it.");
+    function draw(){
+      holder.innerHTML = "";
+      const e = ex[ei];
+      const row = h("div","blocks");
+      const b1 = block("b-subj",e[0],"subject");
+      const b2 = block("b-be",e[1],"verb be");
+      const b3 = block("b-adj",e[2],"adjective");
+      b1.onclick = ()=>{ beep(true); tip.innerHTML = "🔵 <b style='color:#1d4ed8'>Subject</b> = who we talk about: I, you, he, she, we, they."; };
+      b2.onclick = ()=>{ beep(true); tip.innerHTML = "🟠 <b style='color:#ea7a0c'>Verb be</b> = am / is / are."; };
+      b3.onclick = ()=>{ beep(true); tip.innerHTML = "🟢 The <b>adjective</b> comes <b>AFTER</b> be!"; };
+      row.appendChild(b1); row.appendChild(h("div","plus","+"));
+      row.appendChild(b2); row.appendChild(h("div","plus","+"));
+      row.appendChild(b3);
+      holder.appendChild(row);
+      holder.appendChild(h("div","big","➡ " + e.join(" ") + "."));
+    }
+    draw();
+    body.appendChild(holder);
+    body.appendChild(tip);
+    const mix = h("button","btn orange small","🔀 Another example");
+    mix.onclick = ()=>{ beep(true); ei = (ei+1)%ex.length; draw(); };
+    body.appendChild(mix);
+    controls(body);
+  }
+
+  /* slide 3 – am / is / are */
+  function s3(){
+    const body = frame("Which be do we use? It changes with the subject. Tap a word!");
+    const map = {"I":["am","I'm"],"He":["is","He's"],"She":["is","She's"],"You":["are","You're"],"We":["are","We're"],"They":["are","They're"]};
+    const adjs = ["shy","kind","lazy","polite","friendly","tidy","cheerful","quiet"];
+    const holder = h("div");
+    const pron = h("div","pron");
+    function show(p){
+      holder.innerHTML = "";
+      const a = pick(adjs);
+      const row = h("div","blocks");
+      row.appendChild(block("b-subj",p,"subject"));
+      row.appendChild(h("div","plus","+"));
+      row.appendChild(block("b-be",map[p][0],"verb be"));
+      row.appendChild(h("div","plus","+"));
+      row.appendChild(block("b-adj",a,"adjective"));
+      holder.appendChild(row);
+      holder.appendChild(h("div","passage pop","✏️ Short form: " + map[p][1] + " " + a + "."));
+    }
+    Object.keys(map).forEach(p=>{
+      const t = h("button","tile",p);
+      t.onclick = ()=>{ beep(true); show(p); };
+      pron.appendChild(t);
+    });
+    body.appendChild(pron);
+    body.appendChild(holder);
+    body.appendChild(h("div","tip","I → <am>   ·   He / She → <is>   ·   You / We / They → <are>".replace(/</g,"").replace(/>/g,"")));
+    show("She");
+    controls(body);
+  }
+
+  /* slide 4 – negative */
+  function s4(){
+    const body = frame("Want to say the opposite? Put NOT after be, before the adjective.");
+    const ex = [["He","is","lazy"],["She","is","shy"],["I","am","untidy"],["They","are","rude"]];
+    let ei = 0, neg = false;
+    const holder = h("div");
+    const btn = h("button","btn orange small","➕ Add NOT");
+    function draw(){
+      holder.innerHTML = "";
+      const e = ex[ei];
+      const row = h("div","blocks");
+      row.appendChild(block("b-subj",e[0]));
+      row.appendChild(block("b-be",e[1]));
+      if(neg) row.appendChild(block("b-not","not"));
+      row.appendChild(block("b-adj",e[2]));
+      holder.appendChild(row);
+      holder.appendChild(h("div","passage pop", (neg?"🚫 ":"✅ ") + e[0] + " " + e[1] + (neg?" not ":" ") + e[2] + "."));
+      btn.textContent = neg ? "➖ Remove NOT" : "➕ Add NOT";
+    }
+    btn.onclick = ()=>{ beep(true); neg = !neg; draw(); };
+    const nxt = h("button","btn small","🔀 Another example");
+    nxt.onclick = ()=>{ beep(true); ei = (ei+1)%ex.length; neg = false; draw(); };
+    draw();
+    body.appendChild(holder);
+    const r = h("div","row center"); r.appendChild(btn); r.appendChild(nxt);
+    body.appendChild(r);
+    controls(body);
+  }
+
+  /* slide 5 – quick practice */
+  function s5(){
+    const body = frame("Your turn! Tap the ADJECTIVE in each sentence.");
+    const items = [
+      {w:["She","is","kind."], a:2},
+      {w:["I","am","shy."], a:2},
+      {w:["They","are","polite."], a:2},
+      {w:["He","is","not","lazy."], a:3}
+    ];
+    let i = 0;
+    function draw(){
+      body.innerHTML = "";
+      if(i >= items.length){
+        body.appendChild(h("div","msg good","🏆 You learned it! Adjectives come AFTER be. Press Next ➜ to start the Quest!"));
+        markDone(0);
+        cheer(true);
+        const back = h("button","btn small","↺ Review again");
+        back.style.marginTop = "16px";
+        back.onclick = ()=>{ k = 0; render(); };
+        body.appendChild(back);
+        return;
+      }
+      const it = items[i];
+      body.appendChild(h("div","instr","Sentence " + (i+1) + " / " + items.length));
+      const row = h("div","row center");
+      it.w.forEach((w,idx)=>{
+        const t = h("button","tile",w);
+        t.style.fontSize = "clamp(34px,4.6vw,70px)";
+        t.onclick = ()=>{
+          if(idx === it.a){
+            t.classList.add("right");
+            [...row.children].forEach(x=>{ if(x!==t) x.classList.add("off"); });
+            cheer();
+            setTimeout(()=>{ i++; draw(); }, 1300);
+          } else { t.classList.add("off"); oops(); }
+        };
+        row.appendChild(t);
+      });
+      body.appendChild(row);
+    }
+    draw();
+  }
+
+  const slides = [s1,s2,s3,s4,s5];
+  function render(){ slides[k](); }
+  render();
+}
+
+/* ---------- generic multiple-choice stage ---------- */
+function quizStage(c, cfg){
+  let i = 0;
+  function render(){
+    c.innerHTML = "";
+    c.appendChild(h("div","stage-title",cfg.title));
+    if(i >= cfg.items.length){
+      c.appendChild(h("div","msg good","🎉 Stage complete! Press Next ➜"));
+      markDone(cfg.index);
+      return;
+    }
+    const it = cfg.items[i];
+    c.appendChild(h("div","instr", cfg.instr + "   (" + (i+1) + "/" + cfg.items.length + ")"));
+    if(cfg.passage){ c.appendChild(h("div","passage",cfg.passage)); }
+    const q = h("div","big");
+    if(it.q.includes("____")){
+      const parts = it.q.split("____");
+      q.appendChild(document.createTextNode(parts[0]));
+      q.appendChild(h("span","blank","?"));
+      q.appendChild(document.createTextNode(parts[1]||""));
+    } else q.textContent = it.q;
+    c.appendChild(q);
+
+    const box = h("div","grid opts");
+    let tried = false;
+    const msg = h("div");
+    it.options.forEach(opt=>{
+      const b = h("button","btn "+(it.cls||""),opt);
+      b.onclick = ()=>{
+        if(opt === it.answer){
+          b.className = "btn ok";
+          cheer();
+          if(!tried) setScore(1);
+          [...box.children].forEach(x=>{ if(x!==b) x.classList.add("off"); });
+          msg.className = "msg good";
+          msg.textContent = "✅ " + (it.explain || "Correct!");
+          const nx = h("button","btn primary", i+1<cfg.items.length ? "Next question ➜" : "Finish stage ✔");
+          nx.style.marginTop = "16px";
+          nx.onclick = ()=>{ i++; render(); };
+          c.appendChild(msg); c.appendChild(nx);
+        } else {
+          tried = true;
+          b.className = "btn bad off";
+          oops();
+        }
+      };
+      box.appendChild(b);
+    });
+    c.appendChild(box);
+  }
+  render();
+}
+
+/* ---------- Stage 1: build the sentence ---------- */
+function stage1(c){
+  const items = [
+    {hint:"kind + polite", words:["She's","kind","and","polite."]},
+    {hint:"lazy + untidy", words:["He's","lazy","and","untidy."]},
+    {hint:"confident + hard-working", words:["She's","confident","and","hard-working."]},
+    {hint:"quiet + shy", words:["He's","quiet","and","shy."]}
+  ];
+  let i = 0;
+  function render(){
+    c.innerHTML = "";
+    c.appendChild(h("div","stage-title","1 · Build the Sentence"));
+    if(i >= items.length){
+      c.appendChild(h("div","msg good","🎉 Stage complete! Press Next ➜"));
+      markDone(1); return;
+    }
+    const it = items[i];
+    c.appendChild(h("div","instr","Tap the words in the right order.   (" + (i+1) + "/" + items.length + ")"));
+    c.appendChild(h("div","big","🧩 " + it.hint));
+    const slots = h("div","slots");
+    c.appendChild(slots);
+    const tilesBox = h("div","row");
+    const picked = [];
+    let tried = false;
+    const msg = h("div");
+    const tiles = shuffle(it.words).map(w=>{
+      const t = h("button","tile",w);
+      t.onclick = ()=>{
+        if(t.classList.contains("used")) return;
+        t.classList.add("used");
+        picked.push({w, t});
+        const p = h("span","tile placed",w);
+        slots.appendChild(p);
+        if(picked.length === it.words.length){
+          const ok = picked.every((x,k)=>x.w===it.words[k]);
+          if(ok){
+            cheer();
+            if(!tried) setScore(1);
+            msg.className = "msg good"; msg.textContent = "✅ " + it.words.join(" ");
+            const nx = h("button","btn primary", i+1<items.length ? "Next sentence ➜" : "Finish stage ✔");
+            nx.style.marginTop="16px"; nx.onclick=()=>{ i++; render(); };
+            c.appendChild(msg); c.appendChild(nx);
+          } else {
+            tried = true; oops();
+            slots.style.animation = "shake .4s";
+            setTimeout(()=>{
+              slots.style.animation = ""; slots.innerHTML = "";
+              picked.length = 0; tiles.forEach(x=>x.classList.remove("used"));
+            }, 600);
+          }
+        }
+      };
+      return t;
+    });
+    tiles.forEach(t=>tilesBox.appendChild(t));
+    c.appendChild(tilesBox);
+    const clr = h("button","btn orange","↺ Clear");
+    clr.style.marginTop="16px"; clr.style.minHeight="auto"; clr.style.fontSize="clamp(22px,2.4vw,36px)";
+    clr.onclick = ()=>{ slots.innerHTML=""; picked.length=0; tiles.forEach(x=>x.classList.remove("used")); };
+    c.appendChild(clr);
+  }
+  render();
+}
+
+/* ---------- Stage 2: fill in the blanks ---------- */
+function stage2(c){
+  quizStage(c,{
+    index:2, title:"2 · Fill in the Blanks", instr:"Choose the correct adjective.",
+    items:[
+      {q:"My brother never studies or does his homework. He's ____.", options:["lazy","tidy","polite","shy"], answer:"lazy", explain:"He never studies → lazy."},
+      {q:"Sara always helps her friends and looks after her pets. She's ____.", options:["kind","lazy","shy","untidy"], answer:"kind", explain:"She helps others → kind."},
+      {q:"Ali doesn't like talking in front of people. He's ____.", options:["shy","confident","cheerful","responsible"], answer:"shy", explain:"Doesn't like talking to people → shy."},
+      {q:"Our teacher always says 'please' and 'thank you'. She's ____.", options:["polite","lazy","untidy","shy"], answer:"polite", explain:"Please and thank you → polite."},
+      {q:"Omar's room is always messy. He's ____.", options:["untidy","tidy","kind","hard-working"], answer:"untidy", explain:"Messy room → untidy."}
+    ]
+  });
+}
+
+/* ---------- Stage 3: true or false ---------- */
+function stage3(c){
+  quizStage(c,{
+    index:3, title:"3 · True or False", instr:"Read about Sami.",
+    passage:"Sami is a football player. He always trains hard and never misses practice. He helps his teammates and never gets angry with them.",
+    items:[
+      {q:"Sami is lazy.", options:["True ✔","False ✘"], answer:"False ✘", explain:"He always trains hard → not lazy."},
+      {q:"Sami is hard-working.", options:["True ✔","False ✘"], answer:"True ✔", explain:"He always trains hard."},
+      {q:"Sami is unkind.", options:["True ✔","False ✘"], answer:"False ✘", explain:"He helps his teammates → kind."}
+    ]
+  });
+}
+
+/* ---------- Stage 4: odd one out ---------- */
+function stage4(c){
+  quizStage(c,{
+    index:4, title:"4 · Odd One Out", instr:"Which word does NOT belong?",
+    items:[
+      {q:"kind – polite – lazy – friendly", options:["kind","polite","lazy","friendly"], answer:"lazy", explain:"Lazy is negative. The others are positive."},
+      {q:"tidy – responsible – hard-working – untidy", options:["tidy","responsible","hard-working","untidy"], answer:"untidy", explain:"Untidy is negative. The others are positive."}
+    ]
+  });
+}
+
+/* ---------- Stage 5: interview your partner ---------- */
+function stage5(c){
+  const qs = [["tidy","untidy"],["shy","confident"],["hard-working","lazy"]];
+  const answers = [];
+  function render(){
+    c.innerHTML = "";
+    c.appendChild(h("div","stage-title","5 · Interview Your Partner"));
+    const i = answers.length;
+    if(i >= qs.length){
+      c.appendChild(h("div","instr","Now report back to the class:"));
+      const s = answers.slice(0,-1).join(", ") + " and " + answers[answers.length-1];
+      c.appendChild(h("div","passage","🗣️ \"My partner is " + s + ".\""));
+      const again = h("button","btn orange","↺ New interview");
+      again.onclick = ()=>{ answers.length = 0; render(); };
+      c.appendChild(again);
+      markDone(5); return;
+    }
+    c.appendChild(h("div","instr","Ask your partner, then tap the answer.   (" + (i+1) + "/" + qs.length + ")"));
+    c.appendChild(h("div","big","🎤 Are you " + qs[i][0] + " or " + qs[i][1] + "?"));
+    const box = h("div","grid opts");
+    qs[i].forEach(a=>{
+      const b = h("button","btn orange",a);
+      b.onclick = ()=>{ cheer(); answers.push(a); setTimeout(render, 700); };
+      box.appendChild(b);
+    });
+    c.appendChild(box);
+  }
+  render();
+}
+
+/* ---------- Stage 6: favourite character ---------- */
+function stage6(c){
+  function render(){
+    c.innerHTML = "";
+    c.appendChild(h("div","stage-title","6 · My Favourite Character"));
+    c.appendChild(h("div","instr","Spin the words! Think of a cartoon character or hero with these 3 adjectives, then describe them to your partner."));
+    const w = shuffle(ADJ).slice(0,3);
+    const box = h("div","spin-words");
+    w.forEach(x=>box.appendChild(h("span","",x)));
+    c.appendChild(box);
+    c.appendChild(h("div","passage","💬 \"My favourite character is ________. He/She is " + w[0] + ", " + w[1] + " and " + w[2] + ".\""));
+    const b = h("button","btn orange","🎲 Spin again");
+    b.onclick = ()=>{ beep(true); render(); };
+    c.appendChild(b);
+    markDone(6);
+  }
+  render();
+}
+
+/* ---------- Stage 7: bingo ---------- */
+function stage7(c){
+  const clues = [
+    ["shy","He feels nervous when he talks to new people."],
+    ["confident","She isn't scared to speak in front of the class."],
+    ["lazy","He sits on the sofa all day and never helps."],
+    ["kind","She helps people and is nice to animals."],
+    ["polite","He always says 'please' and 'thank you'."],
+    ["tidy","Her room is always clean and organised."],
+    ["untidy","His bag is always messy."],
+    ["friendly","She loves making new friends."],
+    ["hard-working","She works hard at school every day."]
+  ];
+  const board = shuffle(clues.map(x=>x[0]));
+  const order = shuffle(clues);
+  const hit = new Array(9).fill(false);
+  let ci = 0, won = false;
+  const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+
+  c.appendChild(h("div","stage-title","7 · Adjective Bingo"));
+  c.appendChild(h("div","instr","Read the clue, then tap the matching adjective. Get 3 in a row!"));
+  const clue = h("div","clue");
+  c.appendChild(clue);
+  const grid = h("div","bingo");
+  board.forEach((w,idx)=>{
+    const b = h("button","cell",w);
+    b.onclick = ()=>{
+      if(ci >= order.length || hit[idx]) return;
+      if(w === order[ci][0]){
+        hit[idx] = true; b.classList.add("hit"); ci++;
+        showClue();
+        if(!won && lines.some(l=>l.every(k=>hit[k]))){
+          won = true; setScore(1); markDone(7);
+          cheer(true);
+          banner.className = "msg good";
+          banner.textContent = "🎉 BINGO! 3 in a row! Keep playing or press Next ➜";
+        } else cheer();
+      } else {
+        b.classList.add("bad"); oops();
+        setTimeout(()=>b.classList.remove("bad"),450);
+      }
+    };
+    grid.appendChild(b);
+  });
+  c.appendChild(grid);
+  const banner = h("div");
+  c.appendChild(banner);
+  function showClue(){
+    if(ci >= order.length){
+      clue.textContent = "🏁 All clues finished!";
+      if(!won){ markDone(7); }
+    } else clue.textContent = "🔎 " + order[ci][1];
+  }
+  showClue();
+}
+
+/* ---------- Stage 8: about me ---------- */
+function stage8(c){
+  const vals = ["","",""];
+  let active = 0;
+  function render(){
+    c.innerHTML = "";
+    c.appendChild(h("div","stage-title","8 · About Me"));
+    c.appendChild(h("div","instr","Tap a gap, then tap an adjective. Read your sentences aloud!"));
+    const s = h("div","sentence");
+    function slot(k){
+      const sp = h("span","slot"+(active===k?" active":"")+(vals[k]?" filled":""), vals[k]||"?");
+      sp.onclick = ()=>{ active = k; render(); };
+      return sp;
+    }
+    s.appendChild(document.createTextNode("I'm "));  s.appendChild(slot(0));
+    s.appendChild(document.createTextNode(", but I'm ")); s.appendChild(slot(1));
+    s.appendChild(document.createTextNode(". I'm not ")); s.appendChild(slot(2));
+    s.appendChild(document.createTextNode("."));
+    c.appendChild(s);
+    const box = h("div","row");
+    box.style.marginTop = "22px";
+    ADJ.forEach(a=>{
+      const t = h("button","tile",a);
+      t.onclick = ()=>{
+        vals[active] = a;
+        active = vals.findIndex(v=>!v); if(active<0) active = 2;
+        const complete = vals.every(v=>v);
+        render();
+        if(complete){ markDone(8); cheer(true); } else beep(true);
+      };
+      box.appendChild(t);
+    });
+    c.appendChild(box);
+  }
+  render();
+}
+
+/* ---------- Final screen ---------- */
+function finalStage(c){
+  const pct = state.score / state.total;
+  const stars = pct >= .85 ? "⭐⭐⭐" : pct >= .5 ? "⭐⭐" : "⭐";
+  c.innerHTML = "";
+  const f = h("div","final");
+  f.appendChild(h("h2","","🏆 Well done!"));
+  f.appendChild(h("div","stars",stars));
+  f.appendChild(h("p","","Score: " + state.score + " / " + state.total));
+  f.appendChild(h("p","","Prepared by Teacher Marina A.B"));
+  const b = h("button","btn orange","↺ Play again");
+  b.onclick = ()=>{ location.reload(); };
+  f.appendChild(b);
+  c.appendChild(f);
+  cheer(true);
+}
+
+/* ---------- navigation ---------- */
+const stages = [
+  {icon:"📖", fn:stageLearn},
+  {icon:"1", fn:stage1}, {icon:"2", fn:stage2}, {icon:"3", fn:stage3}, {icon:"4", fn:stage4},
+  {icon:"5", fn:stage5}, {icon:"6", fn:stage6}, {icon:"7", fn:stage7}, {icon:"8", fn:stage8},
+  {icon:"🏆", fn:finalStage}
+];
+function renderDots(){
+  const d = $("#dots"); d.innerHTML = "";
+  stages.forEach((s,i)=>{
+    const e = h("div","dot"+(state.cur===i?" cur":"")+(state.done[i]?" done":""), s.icon);
+    e.onclick = ()=>go(i);
+    d.appendChild(e);
+  });
+}
+function go(i){
+  state.cur = Math.max(0,Math.min(stages.length-1,i));
+  const c = $("#stage"); c.innerHTML = "";
+  stages[state.cur].fn(c);
+  renderDots();
+  $("#prev").style.visibility = state.cur===0 ? "hidden" : "visible";
+  $("#next").style.visibility = state.cur===stages.length-1 ? "hidden" : "visible";
+  $("#next").textContent = state.cur===stages.length-2 ? "Finish 🏆" : "Next ➜";
+  window.scrollTo(0,0);
+}
+$("#prev").onclick = ()=>go(state.cur-1);
+$("#next").onclick = ()=>go(state.cur+1);
+$("#sound").onclick = e=>{ soundOn=!soundOn; e.target.textContent = soundOn?"🔊":"🔇"; };
+$("#full").onclick = ()=>{
+  if(!document.fullscreenElement) document.documentElement.requestFullscreen && document.documentElement.requestFullscreen();
+  else document.exitFullscreen();
+};
+go(0);
+</script>
+</body>
+</html>
